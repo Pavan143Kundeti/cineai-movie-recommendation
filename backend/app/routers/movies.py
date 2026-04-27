@@ -43,17 +43,14 @@ def search_movies(
     limit: int = 20,
     db: Session = Depends(get_db)
 ):
+    import json
+    from sqlalchemy import text
     query = db.query(Movie)
-    
     if q:
         query = query.filter(Movie.title.contains(q))
-    
     if genre:
-        query = query.filter(Movie.genres.contains(genre))
-    
+        query = query.filter(text(f"JSON_CONTAINS(genres, '{json.dumps(genre)}')"))
     if min_rating:
         query = query.filter(Movie.vote_average >= min_rating)
-    
-    movies = query.order_by(Movie.popularity.desc()).offset(skip).limit(limit).all()
-    
+    movies = query.order_by(Movie.popularity.desc()).offset(skip).limit(min(limit, 100)).all()
     return movies

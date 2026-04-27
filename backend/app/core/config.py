@@ -7,8 +7,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     
     # API Keys
-    TMDB_API_KEY: str
-    OMDB_API_KEY: str
+    TMDB_API_KEY: Optional[str] = None
+    OMDB_API_KEY: Optional[str] = None
     
     # Security
     SECRET_KEY: str

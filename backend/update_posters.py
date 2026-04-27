@@ -20,8 +20,8 @@ def update_posters():
     print(f"Updating posters using TMDB API...")
     
     try:
-        # Get movies without posters (limit to first 500 for speed)
-        movies = db.query(Movie).filter(Movie.poster_path == None).limit(500).all()
+        # Get top 60 most popular movies without posters
+        movies = db.query(Movie).filter(Movie.poster_path == None).order_by(Movie.popularity.desc()).limit(60).all()
         print(f"Found {len(movies)} movies without posters")
         
         updated = 0

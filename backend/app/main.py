@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .core.database import engine, Base
-from .routers import auth, movies, ratings, watchlist, recommendations
+from .routers import auth, movies, ratings, watchlist, recommendations, users
 from .services.recommendation_engine import recommendation_engine
 from .core.database import SessionLocal
 import logging
@@ -34,6 +34,7 @@ app.include_router(movies.router)
 app.include_router(ratings.router)
 app.include_router(watchlist.router)
 app.include_router(recommendations.router)
+app.include_router(users.router)
 
 
 @app.on_event("startup")
@@ -43,6 +44,7 @@ async def startup_event():
     db = SessionLocal()
     try:
         recommendation_engine.build_content_based_model(db)
+        recommendation_engine.build_svd_model(db)
         logger.info("Recommendation engine initialized successfully")
     except Exception as e:
         logger.error(f"Error initializing recommendation engine: {e}")

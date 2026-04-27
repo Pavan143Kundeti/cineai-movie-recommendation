@@ -62,7 +62,8 @@ htmlcov/
 dmypy.json
 
 # Streamlit
-.streamlit/
+# (keep config.toml but not secrets)
+.streamlit/secrets.toml
 
 # Project Specific
 backend/app/ml_models/*.pkl
