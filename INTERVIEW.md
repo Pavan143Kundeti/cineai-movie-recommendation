@@ -335,3 +335,149 @@ bcrypt.checkpw("wrongpassword".encode(), hashed)  # False
 ---
 
 *CineAI — Built by Pavan, Yousuf, Arif, Dhanush | B.Tech Final Year 2025*
+
+---
+
+## Q14. What is TMDB API Key? Why Did You Use It?
+
+**TMDB = The Movie Database**
+- It is a free public website (like Wikipedia for movies)
+- They provide a free API (web service) to get movie data
+- Website: https://www.themoviedb.org
+
+**What the API Key does:**
+- It is like a password that proves "I am allowed to use TMDB's data"
+- Without it, TMDB blocks your requests
+- It is free — just register and get a key
+
+**Why we used it:**
+| Purpose | How We Used TMDB |
+|---------|-----------------|
+| Movie Posters | Fetched poster images for all 4800 movies |
+| Poster URL format | `https://image.tmdb.org/t/p/w185/posterpath.jpg` |
+| Data source | Our CSV dataset (tmdb_5000_movies.csv) also came from TMDB |
+
+**How it is integrated in our project:**
+
+```python
+# In update_posters.py
+TMDB_API_KEY = "c20cfa2fbbe54c8971f014a6560fd7d9"
+
+# Call TMDB API to get poster path for each movie
+url = f"https://api.themoviedb.org/3/movie/{tmdb_id}?api_key={TMDB_API_KEY}"
+response = requests.get(url)
+poster_path = response.json()['poster_path']
+# Example: "/gKY6q7SjCkAU6FqvqWybDYgUKIF.jpg"
+
+# Then display poster in frontend
+poster_url = f"https://image.tmdb.org/t/p/w185{poster_path}"
+# Shows the actual movie poster image
+```
+
+**In simple words:**
+"We used TMDB API to fetch movie poster images. Without it, our website would show blank boxes instead of movie posters. The API key is stored securely in environment variables, not hardcoded in the source code."
+
+**Keywords to say:** REST API integration, API key authentication, environment variable security, CDN image hosting, rate limiting (we added 0.05s delay between calls)
+
+---
+
+## Q15. How Did You Deploy the Project? (Full Deployment Flow)
+
+**Our deployment has 3 parts working together:**
+
+```
+User opens browser
+       ↓
+Streamlit Cloud (Frontend)
+       ↓ API calls
+Render.com (FastAPI Backend)
+       ↓ SQL queries
+Railway.app (MySQL Database)
+```
+
+---
+
+### Part 1 — Database (Railway MySQL)
+
+**What:** Cloud-hosted MySQL database
+**Why Railway:** Free tier, easy setup, accessible from anywhere on internet
+
+**Steps we did:**
+1. Created MySQL instance on Railway
+2. Got connection URL:
+   `mysql+pymysql://root:password@shuttle.proxy.rlwy.net:58035/railway`
+3. Ran `migrate_data.py` locally pointing to Railway URL
+4. Loaded 4800 movies into Railway MySQL
+
+---
+
+### Part 2 — Backend (Render.com)
+
+**What:** Hosts our FastAPI Python application
+**Why Render:** Free tier, connects directly to GitHub, auto-deploys on every push
+
+**Settings we configured:**
+| Setting | Value |
+|---------|-------|
+| Root Directory | `backend` |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `uvicorn app.main:app --host 0.0.0.0 --port 10000` |
+
+**Environment Variables set on Render:**
+| Variable | Value |
+|----------|-------|
+| `DATABASE_URL` | Railway MySQL connection string |
+| `SECRET_KEY` | JWT signing secret (32+ chars) |
+| `TMDB_API_KEY` | TMDB API key for posters |
+| `ALGORITHM` | HS256 |
+
+**Live URL:** `https://cineai-backend-t8bk.onrender.com`
+**API Docs:** `https://cineai-backend-t8bk.onrender.com/docs`
+
+---
+
+### Part 3 — Frontend (Streamlit Cloud)
+
+**What:** Hosts our Streamlit Python web application
+**Why Streamlit Cloud:** Free, made specifically for Streamlit apps, one-click deploy
+
+**Settings we configured:**
+| Setting | Value |
+|---------|-------|
+| Repository | `Pavan143Kundeti/cineai-movie-recommendation` |
+| Branch | `main` |
+| Main file | `frontend/app.py` |
+| Python version | `3.11` (in `.python-version` file) |
+
+**Secret we added:**
+```toml
+API_BASE_URL = "https://cineai-backend-t8bk.onrender.com"
+```
+
+This tells the frontend where the backend is running.
+
+---
+
+### How Auto-Deploy Works (CI/CD)
+
+```
+We push code to GitHub
+        ↓
+Render detects new commit → auto rebuilds backend
+        ↓
+Streamlit Cloud detects new commit → auto rebuilds frontend
+        ↓
+Live website updated in 3-5 minutes
+```
+
+**Keywords to say:** CI/CD pipeline, environment variables, cloud deployment, auto-deploy on git push, separation of concerns (frontend/backend/database on separate services), 3-tier deployment architecture
+
+---
+
+### One Problem We Faced in Deployment
+
+**Problem:** Streamlit Cloud was using Python 3.14 by default. Pillow (image library) does not support Python 3.14 yet — build failed.
+
+**Solution:** We added a `.python-version` file in the frontend folder with content `3.11`. This forces Streamlit Cloud to use Python 3.11 where all packages work correctly.
+
+**Lesson learned:** Always pin your Python version in deployment. Never rely on the platform default.
