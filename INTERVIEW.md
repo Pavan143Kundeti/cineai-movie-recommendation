@@ -481,3 +481,158 @@ Live website updated in 3-5 minutes
 **Solution:** We added a `.python-version` file in the frontend folder with content `3.11`. This forces Streamlit Cloud to use Python 3.11 where all packages work correctly.
 
 **Lesson learned:** Always pin your Python version in deployment. Never rely on the platform default.
+
+---
+
+## Q16. What is Docker? Why Did You Use It? What is Its Role?
+
+### What is Docker? (Simple Definition)
+
+**Docker is a tool that packages your application with everything it needs to run — code, libraries, settings — into one box called a "Container".**
+
+Think of it like this:
+
+| Real World | Docker |
+|-----------|--------|
+| Shipping container | Docker container |
+| Contains goods safely | Contains your app + all dependencies |
+| Works on any ship | Works on any computer/server |
+| Same box, same contents | Same container, same behavior everywhere |
+
+---
+
+### The Problem Docker Solves
+
+**Without Docker — "It works on my computer" problem:**
+```
+Developer A runs the app → Works fine ✓
+Developer B runs the app → Error! Wrong Python version ✗
+Server runs the app     → Error! Missing library ✗
+```
+
+**With Docker:**
+```
+Developer A builds container → Works fine ✓
+Developer B runs same container → Works fine ✓
+Server runs same container → Works fine ✓
+```
+
+**"Build once, run anywhere"** — this is Docker's main promise.
+
+---
+
+### Docker in Our Project — What We Created
+
+We created **3 containers** using `docker-compose.yml`:
+
+| Container | What it runs | Port |
+|-----------|-------------|------|
+| `db` | MySQL 8.0 database | 3306 |
+| `backend` | FastAPI Python app | 8000 |
+| `frontend` | Streamlit web app | 8501 |
+
+---
+
+### Our Dockerfile — Backend
+
+```dockerfile
+# backend/Dockerfile
+
+FROM python:3.11-slim          # Start with Python 3.11
+
+WORKDIR /app                   # Set working directory
+
+COPY requirements.txt .        # Copy dependencies list
+RUN pip install -r requirements.txt  # Install all packages
+
+COPY . .                       # Copy all code
+
+EXPOSE 8000                    # Open port 8000
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+**Line by line meaning:**
+- `FROM python:3.11-slim` → Use Python 3.11 as base (slim = smaller size)
+- `WORKDIR /app` → All commands run inside /app folder
+- `COPY requirements.txt` → Copy the dependencies file first
+- `RUN pip install` → Install all Python packages
+- `COPY . .` → Copy all project code
+- `EXPOSE 8000` → Tell Docker this app uses port 8000
+- `CMD` → Command to start the app
+
+---
+
+### Our docker-compose.yml — One Command to Run Everything
+
+```yaml
+services:
+  db:           # MySQL database
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: cineai123
+      MYSQL_DATABASE: movie_recommender
+
+  backend:      # FastAPI app
+    build: ./backend
+    ports: ["8000:8000"]
+    depends_on: [db]   # Wait for DB to start first
+
+  frontend:     # Streamlit app
+    build: ./frontend
+    ports: ["8501:8501"]
+    depends_on: [backend]  # Wait for backend to start first
+```
+
+**To run the entire project with ONE command:**
+```bash
+docker-compose up --build
+```
+
+This starts MySQL + FastAPI + Streamlit together automatically.
+
+---
+
+### Why We Used Docker in This Project
+
+| Reason | Explanation |
+|--------|-------------|
+| **Consistency** | Same environment on every developer's machine |
+| **Easy setup** | New team member runs 1 command, everything works |
+| **Deployment ready** | Same container runs locally and on cloud server |
+| **Isolation** | Each service (DB, backend, frontend) runs separately |
+| **No conflicts** | Python version, library versions all locked inside container |
+
+---
+
+### Docker vs Without Docker
+
+| Without Docker | With Docker |
+|---------------|-------------|
+| Install Python manually | Python included in container |
+| Install MySQL manually | MySQL starts automatically |
+| "Works on my machine" problem | Works everywhere same way |
+| 30 minutes setup for new developer | 1 command: `docker-compose up` |
+| Different versions cause errors | Versions locked in Dockerfile |
+
+---
+
+### Important Docker Terms to Know
+
+| Term | Meaning |
+|------|---------|
+| **Image** | Blueprint/template of a container (like a class) |
+| **Container** | Running instance of an image (like an object) |
+| **Dockerfile** | Instructions to build an image |
+| **docker-compose** | Tool to run multiple containers together |
+| **Port mapping** | `8000:8000` means host port 8000 → container port 8000 |
+| **Volume** | Persistent storage so data is not lost when container stops |
+| **depends_on** | Start this container only after another one is ready |
+
+---
+
+### What to Say in Interview
+
+*"We used Docker to containerise our application. We created separate Dockerfiles for the backend and frontend, and a docker-compose.yml to orchestrate all three services — MySQL, FastAPI, and Streamlit — together. This ensures that any developer can clone our repository and run the entire stack with a single command: `docker-compose up --build`. It also makes our deployment environment identical to our development environment, eliminating the classic 'works on my machine' problem."*
+
+**Keywords:** Containerisation, Docker image, Docker container, docker-compose, orchestration, port mapping, environment isolation, infrastructure as code, build once run anywhere
