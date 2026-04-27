@@ -754,7 +754,7 @@ def sidebar():
             </div>""", unsafe_allow_html=True)
 
         st.markdown("---")
-        pages = [("🏠","Home"),("📈","Trending"),("�","Mood"),("�🎯","Recommendations"),
+        pages = [("🏠","Home"),("📈","Trending"),("🎭","Mood"),("🎯","Recommendations"),
                  ("🔍","Search"),("📋","Watchlist"),("⭐","My Ratings"),
                  ("📊","Dashboard"),("⚙️","Preferences")]
         for icon,page in pages:
@@ -1247,6 +1247,14 @@ def main():
 
     page = st.session_state.page
     if   page == "Home":            page_home()
+    elif page == "Trending":
+        st.markdown("<div class='sec-hdr'>📈 Trending This Week</div>", unsafe_allow_html=True)
+        st.markdown("""<div class="info-box">🔥 Movies ranked by combined popularity and rating score.</div><br/>""", unsafe_allow_html=True)
+        movies = cached_trending()
+        if movies:
+            for m in movies: movie_card(m)
+        else:
+            st.markdown("<div class='warn-box'>Could not load trending movies.</div>", unsafe_allow_html=True)
     elif page == "Mood":            section_mood()
     elif page == "Recommendations": page_recommendations()
     elif page == "Search":          page_search()
@@ -1259,4 +1267,5 @@ def main():
     elif page == "Detail":          page_detail()
 
 main()
+
 
