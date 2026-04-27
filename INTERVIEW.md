@@ -4,109 +4,147 @@
 
 ## Q1. Tell me about your project (4-5 minutes)
 
-"We built **CineAI** — a Movie Recommendation System.
+"We built **CineAI** — an intelligent Movie Recommendation System using advanced Machine Learning algorithms.
 
-The idea is simple. When you open Netflix or Amazon Prime, it shows you movies you will like. But how does it know? That is what we built from scratch.
+The core problem we solved is called the **Information Overload Problem** — there are thousands of movies available, but users don't know what to watch. Our system solves this by learning each user's taste and giving personalised recommendations in real time.
 
-Our system has 4800+ movies. A user registers, rates movies they have watched, and our system learns their taste. Then it recommends movies they will enjoy.
+**Architecture:** We followed a **3-tier architecture** —
+- **Frontend** — Streamlit web application
+- **Backend** — RESTful API built with FastAPI (Python)
+- **Database** — MySQL with SQLAlchemy ORM
 
-We used **3 machine learning algorithms** working together:
-- First it looks at what kind of movies you like (genres, directors, cast)
-- Then it finds other users who have similar taste to you
-- Then it combines both to give the best recommendation
+**The ML Engine is the heart of the project.** We implemented a **Hybrid Recommendation System** combining 3 algorithms:
 
-We built a full website with login, search, watchlist, trending movies, mood-based recommendations, and a movie detail page with trailer link.
+1. **TF-IDF Vectorization + Cosine Similarity** — Content-Based Filtering. Converts movie metadata (genres, cast, director, overview) into numerical vectors and finds similarity between movies using cosine distance.
 
-The backend is built with Python FastAPI, database is MySQL, and the frontend is Streamlit. The website is deployed live on the internet."
+2. **SVD — Singular Value Decomposition** — Matrix Factorization technique. Decomposes the user-item rating matrix into latent factors to predict what rating a user would give to an unseen movie.
+
+3. **Pearson Correlation — User-Based Collaborative Filtering** — Finds users with similar rating patterns and recommends what those similar users liked.
+
+**Key problems we solved:**
+- **Cold Start Problem** — handled using popularity-based fallback for new users
+- **Data Sparsity** — handled by normalising ratings per user before SVD
+- **Scalability** — pre-computed TF-IDF similarity matrix on server startup for O(1) lookup
+
+**Security:** JWT-based authentication with bcrypt password hashing (12 rounds).
+
+**Deployment:** Backend on Render, Database on Railway MySQL, Frontend on Streamlit Cloud. CI/CD through GitHub.
+
+The system has 4800+ movies, 15+ REST API endpoints, and the recommendation quality improves dynamically as users rate more movies."
 
 ---
 
-## Q2. Technologies Used
+## Q2. Technologies Used — With Keywords
 
-| Technology | What it is | Why we used it |
+| Technology | Definition | Keywords to Say |
 |-----------|-----------|----------------|
-| **Python** | Programming language | Easy for ML, everyone knows it |
-| **FastAPI** | Tool to build APIs (web services) | Fast, modern, auto-generates documentation |
-| **MySQL** | Database to store data | Stores users, movies, ratings permanently |
-| **Streamlit** | Tool to build web UI using Python | Quick to build, no need to learn HTML/CSS separately |
-| **Scikit-learn** | ML library | Has all algorithms ready to use |
-| **Pandas** | Data handling library | Read and process CSV files easily |
-| **JWT** | Security token for login | Industry standard, secure |
-| **bcrypt** | Password encryption | Passwords stored safely, not as plain text |
-| **Railway** | Cloud MySQL hosting | Free, easy to set up |
-| **Render** | Cloud backend hosting | Free, connects to GitHub automatically |
-| **Streamlit Cloud** | Frontend hosting | Free, one-click deploy |
+| **Python** | High-level, interpreted programming language | "We used Python because of its rich ML ecosystem — NumPy, Pandas, Scikit-learn" |
+| **FastAPI** | Modern async Python web framework based on OpenAPI standard | "FastAPI gives automatic Swagger UI documentation, Pydantic validation, and async support" |
+| **MySQL** | Relational Database Management System (RDBMS) | "ACID compliant, supports JSON columns for flexible schema, used SQLAlchemy ORM for abstraction" |
+| **SQLAlchemy** | Python ORM (Object Relational Mapper) | "Prevents SQL injection, database-agnostic, clean model definitions" |
+| **Streamlit** | Python-based reactive web framework for data apps | "Rapid prototyping, Python-native, perfect for ML demos" |
+| **Scikit-learn** | Open-source ML library — TF-IDF, SVD, cosine similarity | "Industry standard ML library, TruncatedSVD for matrix factorization" |
+| **JWT** | JSON Web Token — stateless authentication standard | "Stateless, scalable, tokens expire in 24 hours, signed with HS256 algorithm" |
+| **bcrypt** | Adaptive password hashing algorithm | "12 salt rounds, resistant to brute force and rainbow table attacks" |
+| **Pandas / NumPy** | Data manipulation and numerical computing libraries | "Used for user-item matrix construction and rating normalisation" |
+| **Docker** | Containerisation platform | "Docker + docker-compose for consistent deployment across environments" |
+| **GitHub** | Version control and CI/CD | "Git branching strategy, pull requests, automated deployment on push" |
 
 ---
 
-## Q3. ML Algorithms — Simple Explanation
+## Q3. ML Algorithms — Technical Explanation
 
-### Algorithm 1 — TF-IDF + Cosine Similarity (Content-Based)
+### Algorithm 1 — TF-IDF + Cosine Similarity (Content-Based Filtering)
 
-**What it means:**
-- TF-IDF = Term Frequency - Inverse Document Frequency
-- It converts movie descriptions into numbers
-- Then finds movies that are similar to each other
+**Definition:**
+- **TF-IDF** = Term Frequency × Inverse Document Frequency
+- Converts text (movie metadata) into numerical feature vectors
+- **Cosine Similarity** measures the angle between two vectors — closer to 1 means more similar
 
-**Simple example:**
+**How it works in our project:**
 ```
-Movie A: "Action, Adventure, Iron Man, Robert Downey"
-Movie B: "Action, Adventure, Thor, Chris Hemsworth"
-Movie C: "Romance, Drama, Love Story"
+Movie features = genres + cast + director + overview
+→ TF-IDF converts this to a vector
+→ Cosine similarity finds nearest movies
 
-→ A and B are similar (both Action/Adventure)
-→ C is different
+Example:
+Inception vector:  [0.8, 0.1, 0.9, 0.2]  (Sci-Fi, Thriller heavy)
+Interstellar vec:  [0.7, 0.1, 0.8, 0.3]  (Sci-Fi, Thriller heavy)
+Similarity = 0.94  → Very similar ✓
+
+Inception vs Titanic:
+Titanic vector:    [0.1, 0.9, 0.1, 0.8]  (Romance, Drama heavy)
+Similarity = 0.12  → Not similar ✓
 ```
 
-**When used:** When a user clicks "Find Similar" on a movie
+**Keywords:** Feature extraction, vectorization, cosine distance, n-gram (1,2), sublinear TF scaling, stop words removal
 
 ---
 
-### Algorithm 2 — SVD (Singular Value Decomposition)
+### Algorithm 2 — SVD Matrix Factorization (Collaborative Filtering)
 
-**What it means:**
-- SVD = Matrix Factorization
-- It creates a "taste profile" for every user
-- Learns hidden patterns from ratings
+**Definition:**
+- SVD = Singular Value Decomposition
+- Decomposes the User × Movie rating matrix into latent factor matrices
+- Learns hidden patterns — "users who like Sci-Fi also like mind-bending plots"
 
-**Simple example:**
+**How it works:**
 ```
-User 1 rated: Action=9, Comedy=3, Horror=2
-User 2 rated: Action=8, Comedy=4, Horror=1
+Rating Matrix R (Users × Movies):
+         Inception  Interstellar  Titanic  Avatar
+User 1:     9           8           2        7
+User 2:     8           9           3        8
+User 3:     2           1           9        3
+User 4:     ?           8           ?        7   ← predict missing
 
-→ Both users have similar taste
-→ If User 1 liked Movie X, recommend X to User 2
+SVD decomposes R into:
+R ≈ U × Σ × V^T
+(User factors) × (Weights) × (Movie factors)
+
+→ Predicts User 4 would rate Inception = 8.2
+→ Recommends Inception to User 4
 ```
 
-**When used:** After a user rates 5+ movies
+**We used:** TruncatedSVD with 50 latent components, mean-normalized ratings
+
+**Keywords:** Matrix factorization, latent factors, dimensionality reduction, TruncatedSVD, rating normalization, collaborative signal
 
 ---
 
-### Algorithm 3 — Pearson Collaborative Filtering
+### Algorithm 3 — Pearson Correlation (User-Based CF)
 
-**What it means:**
-- Finds users who rated movies similarly to you
-- Recommends what those similar users liked
+**Definition:**
+- Measures linear correlation between two users' rating patterns
+- Range: -1 (opposite taste) to +1 (identical taste)
 
-**Simple example:**
+**How it works:**
 ```
-You liked: Inception(9), Interstellar(9), Dark Knight(8)
-User B liked: Inception(8), Interstellar(9), Dark Knight(9)
+You rated:    Inception=9, Dark Knight=9, Interstellar=8
+User B rated: Inception=8, Dark Knight=9, Interstellar=9
 
-→ You and User B have similar taste
-→ User B also liked "The Prestige" → Recommend it to you
+Pearson correlation = 0.95 → Very similar users
+→ User B also rated "The Prestige" = 9
+→ Recommend "The Prestige" to you
 ```
+
+**Keywords:** Pearson correlation coefficient, user similarity matrix, neighborhood-based CF, rating prediction, top-K similar users
 
 ---
 
-### Hybrid Engine (All 3 Combined)
+### Hybrid Engine — Adaptive Weighted Combination
 
-| User History | Algorithm Used |
-|-------------|----------------|
-| 0 ratings | Popular movies (trending) |
-| 1-4 ratings | 90% Content-Based, 10% SVD |
-| 5-19 ratings | 50% Content-Based, 50% SVD |
-| 20+ ratings | 30% Content-Based, 70% SVD |
+| User Ratings | Content Weight | SVD Weight | Reason |
+|-------------|---------------|------------|--------|
+| 0 ratings | — | — | Show popular movies |
+| 1–4 ratings | 90% | 10% | Not enough data for CF |
+| 5–19 ratings | 50% | 50% | Balanced approach |
+| 20+ ratings | 30% | 70% | CF is now reliable |
+
+**Additional boosts:**
+- Preferred genre → **+15% score boost**
+- Disliked genre → **-30% score penalty**
+
+**Keywords:** Hybrid filtering, adaptive weights, cold start mitigation, genre preference weighting, score normalization
 
 ---
 
